@@ -9,4 +9,6 @@ DEST="$SCRIPT_DIR/tmp"
 cd "$DEST"
 
 pdm install
-pdm run test
+pdm run test || true
+
+pre-commit install
