@@ -2,9 +2,12 @@
 
 set -euo pipefail
 
-DEST=tests/tmp
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+cd "$SCRIPT_DIR/.."
 
-rm -fr ${DEST}
+DEST="$SCRIPT_DIR/tmp"
+
+rm -fr "${DEST}"
 
 echo "///////////////////////////////////////////"
 echo "             TAGGING TEMPLATE COPY"
