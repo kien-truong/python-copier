@@ -12,3 +12,4 @@ pdm install
 pdm run test || true
 
 pre-commit install
+pre-commit run -a
