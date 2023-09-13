@@ -21,25 +21,6 @@ author_email:
   type: str
   help: Your email
 
-author_username:
-  type: str
-  help: Your username (e.g. on GitHub)
-
-copyright_holder:
-  type: str
-  help: The name of the person/entity holding the copyright
-  default: "{{ author_fullname }}"
-
-copyright_holder_email:
-  type: str
-  help: The email of the person/entity holding the copyright
-  default: "{{ author_email }}"
-
-copyright_date:
-  type: str
-  help: The copyright date
-  default: "2023"
-
 copyright_license:
   type: str
   help: Your project's license
