@@ -9,7 +9,7 @@ DEST="$SCRIPT_DIR/tmp"
 cd "$DEST"
 
 pdm install
-pdm run test || true
+pdm run pytest || true
 
 pre-commit install
 pre-commit run -a

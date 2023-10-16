@@ -52,7 +52,7 @@ include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
 
 [tool.pytest.ini_options]
 addopts = "-ra --quiet --strict-markers"
-python_functions = "should_*"
+python_functions = "should__*"
 asyncio_mode="auto"
 markers = [
     "slow: mark tests as slow"
