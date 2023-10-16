@@ -7,7 +7,11 @@ authors = [
 license = {text = "{{ copyright_license }}"}
 readme = "README.md"
 requires-python = "{{ python_package_requires_python }}"
-dependencies = []
+dependencies = [
+    "structlog~=23.2",
+    "rich~=13.6",
+    "dynaconf~=3.2",
+]
 dynamic = ["version"]
 
 classifiers = [
