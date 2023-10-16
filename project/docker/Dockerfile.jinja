@@ -1,0 +1,80 @@
+# Base image with up-to-date common packages
+FROM python:3.11-slim-bookworm as base
+
+ENV \
+    DEBCONF_NONINTERACTIVE_SEEN=true \
+    DEBIAN_FRONTEND="noninteractive" \
+    APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=DontWarn \
+    UMASK="0002" \
+    TZ="Etc/UTC"
+
+USER root
+
+# Create common app-user for our images
+RUN groupadd --gid 10000 app-user && \
+    adduser app-user \
+        --uid 10000 \
+        --gid 10000 \
+        --system \
+        --disabled-password \
+        --no-create-home \
+    && \
+    mkdir -p /app /config && \
+    chown -R app-user:app-user /app /config && \
+    chmod -R 775 /app /config
+
+WORKDIR /app
+
+RUN set -eux && \
+    echo 'APT::Install-Recommends "false";' >/etc/apt/apt.conf.d/00recommends && \
+    echo 'APT::Install-Suggests "false";' >>/etc/apt/apt.conf.d/00recommends && \
+    echo 'APT::Get::Install-Recommends "false";' >>/etc/apt/apt.conf.d/00recommends && \
+    echo 'APT::Get::Install-Suggests "false";' >>/etc/apt/apt.conf.d/00recommends && \
+    apt-get -qq update && \
+    apt-get install -y \
+      locales \
+      tini && \
+    localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8 && \
+      apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
+      apt-get autoremove -y --purge && \
+      apt-get clean && \
+      rm -rf \
+        /tmp/* \
+        /var/lib/apt/lists/* \
+        /var/cache/apt/* \
+        /var/tmp/*
+
+ENV LANG en_US.UTF-8
+
+VOLUME ["/config"]
+
+FROM base as builder
+
+# Install PDM
+RUN pip install -U pip setuptools wheel && pip install pdm
+
+# Switch back to regular user for package installation
+USER app-user
+
+COPY pyproject.toml pdm.lock README.md /app/
+RUN pdm venv create && pdm sync --prod --no-self
+
+FROM base as runner
+
+ENTRYPOINT [ "/usr/bin/tini", "--" ]
+
+# retrieve venv from build stage
+COPY --from=builder /app/.venv /app/.venv
+
+# copy our source code and add to PYTHONPATH
+COPY src/ /app/src
+ENV PYTHONPATH /app/src
+
+# copy settings.toml and set the config path
+COPY settings.toml /config/settings.toml
+ENV ROOT_PATH_FOR_DYNACONF /config
+
+# Switch to app-user account for running
+USER app-user
+
+CMD ["/app/.venv/bin/python", "/app/src/{{ python_package_import_name }}/drivers/main.py"]
