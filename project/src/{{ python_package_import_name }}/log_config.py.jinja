@@ -3,7 +3,7 @@ import logging
 import structlog
 
 
-def _common_config(formatter, debug: bool):
+def _config_log_level(debug: bool):
     root_logger = logging.getLogger()
     if not debug:
         # library log level is WARNING
@@ -14,44 +14,79 @@ def _common_config(formatter, debug: bool):
     else:
         root_logger.setLevel(logging.DEBUG)
 
+
+_structlog_shared_processors = [
+    structlog.stdlib.add_log_level,
+    structlog.stdlib.add_logger_name,
+    structlog.stdlib.ExtraAdder(),
+]
+
+
+def _structlog_common_config():
     # Prepare event dict for `ProcessorFormatter`.
     structlog.configure(
         processors=[
-            structlog.contextvars.merge_contextvars,
             structlog.stdlib.filter_by_level,
-            structlog.stdlib.ExtraAdder(),
-            structlog.stdlib.add_logger_name,
-            structlog.stdlib.add_log_level,
+            structlog.contextvars.merge_contextvars,
+        ]
+        + _structlog_shared_processors
+        + [
             structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
         ],
         logger_factory=structlog.stdlib.LoggerFactory(),
+        cache_logger_on_first_use=True,
     )
 
+
+def _replace_root_handler(formatter):
     # Handover to stdlib logging
+    root_logger = logging.getLogger()
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
     root_logger.addHandler(handler)
 
 
-def console_logging(debug: bool = False):
-    formatter = structlog.stdlib.ProcessorFormatter(
+def _structlog_console_formatter():
+    return structlog.stdlib.ProcessorFormatter(
+        foreign_pre_chain=_structlog_shared_processors,
         processors=[
             structlog.processors.TimeStamper(fmt="%H:%M:%S"),
             structlog.stdlib.ProcessorFormatter.remove_processors_meta,
             structlog.dev.ConsoleRenderer(),
         ],
     )
-    _common_config(formatter, debug)
 
 
-def json_logging(debug: bool = False):
-    formatter = structlog.stdlib.ProcessorFormatter(
+def _structlog_json_formatter():
+    return structlog.stdlib.ProcessorFormatter(
         processors=[
-            structlog.processors.ExceptionRenderer(),
+            structlog.processors.dict_tracebacks,
             structlog.processors.TimeStamper(fmt="iso", key="@timestamp"),
             structlog.stdlib.ProcessorFormatter.remove_processors_meta,
             structlog.processors.EventRenamer(to="message"),
             structlog.processors.JSONRenderer(),
         ],
     )
-    _common_config(formatter, debug)
+
+
+def console_logging(debug: bool = False):
+    _config_log_level(debug)
+    _structlog_common_config()
+    formatter = _structlog_console_formatter()
+    _replace_root_handler(formatter)
+
+
+def json_logging(debug: bool = False):
+    _config_log_level(debug)
+    _structlog_common_config()
+    formatter = _structlog_json_formatter()
+    _replace_root_handler(formatter)
+
+
+def pytest_log_formatter() -> logging.Formatter:
+    """
+    Return a formatter suitable for pytest
+    :return:
+    """
+    _structlog_common_config()
+    return _structlog_console_formatter()
