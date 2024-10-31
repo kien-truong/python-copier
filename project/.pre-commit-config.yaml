@@ -30,10 +30,6 @@ repos:
     rev: 2.19.3 # a PDM release exposing the hook
     hooks:
       - id: pdm-lock-check
-      - id: pdm-export
-        # command arguments, e.g.:
-        args: ['-o', 'requirements.txt', '--no-hashes']
-        files: ^pdm.lock$
       - id: pdm-sync
   - repo: https://github.com/executablebooks/mdformat
     rev: 0.7.18
