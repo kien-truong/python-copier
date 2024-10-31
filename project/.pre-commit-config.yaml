@@ -1,14 +1,17 @@
 default_install_hook_types:
+  # Default stage
   - pre-commit
-  - commit-msg
-
+  - pre-push
+  # Needed for pdm-sync
+  - post-checkout
+  - post-merge
+  - post-rewrite
 default_stages:
-  - commit
-  - push
-
+  - pre-commit
+  - pre-push
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -16,33 +19,38 @@ repos:
       - id: check-toml
       - id: check-added-large-files
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.290
+    rev: v0.7.1
     hooks:
+      # Run the linter.
       - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
-        types_or:
-          - python
-          - pyi
-          - jupyter
-  - repo: https://github.com/srstevenson/nb-clean
-    rev: 3.0.0
+        args: [--fix]
+      # Run the formatter.
+      - id: ruff-format
+  - repo: https://github.com/pdm-project/pdm
+    rev: 2.19.3 # a PDM release exposing the hook
     hooks:
-      - id: nb-clean
-  - repo: https://github.com/omnilib/ufmt
-    rev: v2.2.0
+      - id: pdm-lock-check
+      - id: pdm-export
+        # command arguments, e.g.:
+        args: ['-o', 'requirements.txt', '--no-hashes']
+        files: ^pdm.lock$
+      - id: pdm-sync
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.18
     hooks:
-      - id: ufmt
+      - id: mdformat
+        # Optionally add plugins
         additional_dependencies:
-          - black ~= 23.9
-          - usort ~= 1.0
-  - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 23.9.1
+          - mdformat-gfm
+          - mdformat-ruff
+          - mdformat-frontmatter
+          - mdformat-footnote
+          - mdformat-gfm-alerts
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.42.0
     hooks:
-      - id: black-jupyter
-        language_version: python3.10
-        types_or:
-          - jupyter
+      - id: markdownlint
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.8.2
+    rev: v3.30.0
     hooks:
       - id: commitizen

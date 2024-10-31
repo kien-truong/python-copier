@@ -26,31 +26,42 @@ build-backend = "pdm.backend"
 
 
 [tool.pdm.version]
-source = "scm"
-
-[tool.pdm.build]
-package-dir = "src"
+source = "file"
+path = "src/{{python_package_import_name}}/_version.py"
 
 [tool.pdm.dev-dependencies]
-test = [
+dev = [
+    # Testing
     "pytest~=8.3",
     "pytest-asyncio~=0.24",
     "pytest-cov~=6.0",
-]
-lint = [
+
+    # Linting
     "ruff~=0.7.1",
     "black~=24.10",
-]
-dev = [
+
+    # Other dev tools
     "jupyterlab~=4.3",
     "python-lsp-server[rope]~=1.12",
+    "commitizen~=3.30",
 ]
 
-[tool.ruff]
-include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
+[tool.ruff.lint]
+extend-select = [
+    # Also sort import on ruff check
+    "I"
+]
 
 [tool.pytest.ini_options]
-addopts = "-ra --quiet --strict-markers"
+testpaths = [
+    "tests"
+]
+addopts = [
+    "-ra",
+    "--quiet",
+    "--strict-markers",
+    "--import-mode=importlib",
+]
 asyncio_mode="auto"
 markers = [
     "slow: mark tests as slow"
