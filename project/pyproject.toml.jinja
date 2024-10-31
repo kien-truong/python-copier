@@ -8,8 +8,8 @@ license = {text = "{{ copyright_license }}"}
 readme = "README.md"
 requires-python = "{{ python_package_requires_python }}"
 dependencies = [
-    "structlog~=23.2",
-    "rich~=13.6",
+    "structlog~=24.4",
+    "rich~=13.9",
     "dynaconf~=3.2",
     "jinja2~=3.1",
 ]
@@ -33,19 +33,17 @@ package-dir = "src"
 
 [tool.pdm.dev-dependencies]
 test = [
-    "pytest~=7.4",
-    "pytest-asyncio~=0.21",
-    "pytest-cov~=4.1",
+    "pytest~=8.3",
+    "pytest-asyncio~=0.24",
+    "pytest-cov~=6.0",
 ]
 lint = [
-    "black~=23.9",
-    "jupyter-black~=0.3",
-    "usort~=1.0",
-    "ufmt~=2.2",
+    "ruff~=0.7.1",
+    "black~=24.10",
 ]
 dev = [
-    "jupyterlab~=4.0",
-    "python-lsp-server[rope]~=1.8",
+    "jupyterlab~=4.3",
+    "python-lsp-server[rope]~=1.12",
 ]
 
 [tool.ruff]
@@ -53,7 +51,6 @@ include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
 
 [tool.pytest.ini_options]
 addopts = "-ra --quiet --strict-markers"
-python_functions = "should__*"
 asyncio_mode="auto"
 markers = [
     "slow: mark tests as slow"
