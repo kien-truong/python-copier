@@ -105,6 +105,38 @@ def _structlog_logfmt_formatter():
     )
 
 
+def _structlog_airflow_formatter():
+    return structlog.stdlib.ProcessorFormatter(
+        foreign_pre_chain=_structlog_shared_processors,
+        processors=[
+            structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+            structlog.dev.ConsoleRenderer(
+                columns=[
+                    structlog.dev.Column(
+                        "event",
+                        structlog.dev.KeyValueColumnFormatter(
+                            key_style=None,
+                            value_style="",
+                            reset_style="",
+                            value_repr=str,
+                        ),
+                    ),
+                    structlog.dev.Column(
+                        "",
+                        structlog.dev.KeyValueColumnFormatter(
+                            key_style="",
+                            value_style="",
+                            reset_style="",
+                            value_repr=repr,
+                        ),
+                    ),
+                ],
+                exception_formatter=structlog.dev.plain_traceback,
+            ),
+        ],
+    )
+
+
 def console_logging():
     formatter = _structlog_console_formatter()
     _replace_handlers(formatter)
@@ -117,6 +149,11 @@ def json_logging():
 
 def logfmt_logging():
     formatter = _structlog_logfmt_formatter()
+    _replace_handlers(formatter)
+
+
+def airflow_logging():
+    formatter = _structlog_airflow_formatter()
     _replace_handlers(formatter)
 
 
@@ -135,6 +172,8 @@ def init_logging(
             json_logging()
         elif log_format == "logfmt":
             logfmt_logging()
+        elif log_format == "airflow":
+            airflow_logging()
         else:
             console_logging()
         _log_init = True

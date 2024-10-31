@@ -1,14 +1,10 @@
-from datetime import date
-
 from dynaconf import Dynaconf
 
 settings = Dynaconf(
     envvar_prefix="{{ python_package_import_name | upper }}",
     settings_files=["settings.toml", ".secrets.toml"],
     load_dotenv=True,
-    validators=[
-        
-    ],
+    validators=[],
 )
 
 settings.validators.register()
