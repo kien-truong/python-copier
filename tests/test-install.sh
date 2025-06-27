@@ -8,8 +8,8 @@ DEST="$SCRIPT_DIR/tmp"
 
 cd "$DEST"
 
-pdm install
-pdm run pytest || true
+uv sync
+uv run pytest || true
 
 pre-commit install
 pre-commit run -a

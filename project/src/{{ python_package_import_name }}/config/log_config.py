@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from typing import Union
 
 import structlog
 
@@ -29,14 +30,20 @@ def _handle_exception(exc_type, exc_value, exc_traceback):
     )
 
 
-def _config_log_level(base_log_level: str, app_log_level: str, app_root_pkg: str):
+def _config_log_level(
+    base_log_level: Union[int, str], app_log_level: Union[int, str], app_root_pkg: str
+):
     # set base log level on root logger
     root_logger = logging.getLogger()
-    root_logger.setLevel(base_log_level.upper())
+    if isinstance(base_log_level, str):
+        base_log_level = base_log_level.upper()
+    root_logger.setLevel(base_log_level)
+
     # set app log level on app logger
-    logging.getLogger("__main__").setLevel(app_log_level.upper())
-    # Set log level for our root package
-    logging.getLogger(app_root_pkg).setLevel(app_log_level.upper())
+    if isinstance(app_log_level, str):
+        app_log_level = app_log_level.upper()
+    logging.getLogger("__main__").setLevel(app_log_level)
+    logging.getLogger(app_root_pkg).setLevel(app_log_level)
 
 
 def _structlog_common_config():
@@ -58,11 +65,11 @@ def _structlog_common_config():
 
 
 def _replace_handlers(formatter):
+    structlog_handler = logging.StreamHandler()
+    structlog_handler.setFormatter(formatter)
     # Handover to stdlib logging
     root_logger = logging.getLogger()
-    handler = logging.StreamHandler()
-    handler.setFormatter(formatter)
-    root_logger.addHandler(handler)
+    root_logger.addHandler(structlog_handler)
 
 
 def _structlog_console_formatter():
@@ -70,7 +77,7 @@ def _structlog_console_formatter():
     return structlog.stdlib.ProcessorFormatter(
         foreign_pre_chain=_structlog_shared_processors,
         processors=[
-            structlog.processors.TimeStamper(fmt="%H:%M:%S"),
+            structlog.processors.TimeStamper(fmt="%H:%M:%S", utc=False),
             structlog.stdlib.ProcessorFormatter.remove_processors_meta,
             structlog.dev.ConsoleRenderer(colors=colors),
         ],
@@ -109,9 +116,19 @@ def _structlog_airflow_formatter():
     return structlog.stdlib.ProcessorFormatter(
         foreign_pre_chain=_structlog_shared_processors,
         processors=[
+            structlog.processors.TimeStamper(fmt="%H:%M:%S", utc=True),
             structlog.stdlib.ProcessorFormatter.remove_processors_meta,
             structlog.dev.ConsoleRenderer(
                 columns=[
+                    structlog.dev.Column(
+                        "timestamp",
+                        structlog.dev.KeyValueColumnFormatter(
+                            key_style=None,
+                            value_style="",
+                            reset_style="",
+                            value_repr=str,
+                        ),
+                    ),
                     structlog.dev.Column(
                         "event",
                         structlog.dev.KeyValueColumnFormatter(
@@ -158,7 +175,10 @@ def airflow_logging():
 
 
 def init_logging(
-    log_format: str, base_log_level: str, app_log_level: str, app_root_pkg: str
+    log_format: str,
+    base_log_level: Union[int, str],
+    app_log_level: Union[int, str],
+    app_root_pkg: str,
 ):
     global _log_init
     if not _log_init:

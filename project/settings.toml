@@ -1,6 +1,0 @@
-# Dynaconf default configuration file
-#
-# Logging configuration
-log_format = "console"
-log_base_level = "warning"
-log_app_level = "info"

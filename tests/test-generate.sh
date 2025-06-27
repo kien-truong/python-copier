@@ -29,7 +29,7 @@ echo "///////////////////////////////////////////"
 echo
 
 copier copy -f "${template}" "${DEST}" \
--d project_name="copier-pdm-testing" \
+-d project_name="copier-uv-testing" \
 -d project_description='Testing this great template' \
 -d author_fullname="Tester" \
 -d author_username="tester" \

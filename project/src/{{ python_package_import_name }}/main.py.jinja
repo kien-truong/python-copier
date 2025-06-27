@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
+import os
+
 import structlog
 
-from {{ python_package_import_name }}.config.app import settings
 from {{ python_package_import_name }}.config.log_config import init_logging
 
 init_logging(
-    settings.log_format,
-    settings.log_base_level,
-    settings.log_app_level,
-    "{{ python_package_import_name }}",
+    log_format=os.getenv("LOG_FORMAT", "console"),
+    base_log_level=os.getenv("LOG_BASE_LEVEL", "WARNING"),
+    app_log_level=os.getenv("LOG_APP_LEVEL", "INFO"),
+    app_root_pkg="{{ python_package_import_name }}",
 )
 
 logger = structlog.stdlib.get_logger()
