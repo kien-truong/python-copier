@@ -1,5 +1,5 @@
 # Base image with up-to-date common packages
-FROM python:3.12-slim-bookworm as base
+FROM python:3.13-slim-bookworm AS base
 
 ENV \
     DEBCONF_NONINTERACTIVE_SEEN=true \
@@ -17,11 +17,11 @@ RUN groupadd --gid 10000 app-user && \
         --gid 10000 \
         --system \
         --disabled-password \
-        --no-create-home \
+        --home /app \
     && \
-    mkdir -p /app /config && \
-    chown -R app-user:app-user /app /config && \
-    chmod -R 775 /app /config
+    mkdir -p /config && \
+    chown -R app-user:app-user /config && \
+    chmod -R 775 /config
 
 WORKDIR /app
 
@@ -44,22 +44,22 @@ RUN set -eux && \
         /var/cache/apt/* \
         /var/tmp/*
 
-ENV LANG en_US.UTF-8
+ENV LANG=en_US.UTF-8
 
 VOLUME ["/config"]
 
-FROM base as builder
+FROM base AS builder
 
-# Install PDM
-RUN pip install -U pip setuptools wheel && pip install pdm
+# install uv
+RUN python -m pip install -U uv
 
 # Switch back to regular user for package installation
 USER app-user
 
-COPY pyproject.toml pdm.lock README.md /app/
-RUN pdm venv create && pdm sync --prod --no-self
+COPY pyproject.toml uv.lock /app/
+RUN uv sync --locked --no-dev --no-install-project
 
-FROM base as runner
+FROM base AS runner
 
 ENTRYPOINT [ "/usr/bin/tini", "--" ]
 
@@ -68,13 +68,9 @@ COPY --from=builder /app/.venv /app/.venv
 
 # copy our source code and add to PYTHONPATH
 COPY src/ /app/src
-ENV PYTHONPATH /app/src
-
-# copy settings.toml and set the config path
-COPY settings.toml /config/settings.toml
-ENV ROOT_PATH_FOR_DYNACONF /config
+ENV PYTHONPATH=/app/src
 
 # Switch to app-user account for running
 USER app-user
 
-CMD ["/app/.venv/bin/python", "/app/src/{{ python_package_import_name }}/drivers/main.py"]
+CMD ["/app/.venv/bin/python", "/app/src/{{ python_package_import_name }}/main.py"]
